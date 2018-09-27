@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+
+    <title>水害マップ</title>
+
+    <!-- Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link href="styles.css" rel="stylesheet">
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="js/lib/jquery.i18n/jquery.i18n.js"></script>
+    <script src="js/lib/jquery.i18n/jquery.i18n.messagestore.js"></script>
+    <script src="js/lib/jquery.i18n/jquery.i18n.fallbacks.js"></script>
+    <script src="js/lib/jquery.i18n/jquery.i18n.language.js"></script>
+    <script src="js/lib/jquery.i18n/jquery.i18n.parser.js"></script>
+    <script src="js/lib/jquery.i18n/jquery.i18n.emitter.js"></script>
+    <script src="js/lib/jquery.i18n/jquery.i18n.emitter.bidi.js"></script>
+      <script src="js/lib/app.js"></script>
+    <script src="antixss.js" type="text/javascript"></script>
+
+    <style type="text/css">
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      #map_canvas { height: 100% }
+      .gm-style-iw { text-align : center; }
+    </style>
+    
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDxzWpM-p5RJyMxb4txuTUW7U4bj_wPTbY&sensor=false"> </script>
+    
+<script>
+    function initMap() {
+    /*    
+    var startLocation = new google.maps.LatLng( 34.719164   , 135.487251 ) ,
+       elm = document.getElementById('map_canvas') ,
+       map = new google.maps.Map(elm,  {
+             zoom: 18,
+             center: startLocation });   
+             */
+    }
+    
+ function onRouteSearch(){ 
+      
+      var input_start_address = document.getElementById("input_start_address") ,
+           input_end_address = document.getElementById("input_end_address");  
+      var startAddress = input_start_address.value ,
+           endAddress = input_end_address.value;
+         
+     getLocationFromAddress (
+          startAddress , function ( location ) {
+            var elm = document.getElementById('map_canvas') ;
+            startLocation = location ;
+             map = new google.maps.Map(elm,  {
+                               zoom:30,
+                              center: startLocation });
+                              
+          getLocationFromAddress (
+              endAddress , function ( location ) {
+                    var endLocation = location ,
+                          startLatLng = { lat : startLocation.lat()  , lng : startLocation.lng() } ,
+                          endLatLng =  { lat : endLocation.lat() , lng : endLocation.lng() } ;
+                          
+                    var wayPointsList  = getShiftedWayPointsList( {
+                        offsetLatLng   : {  lat:0.0005 , lng:0.0005 } ,
+                        startPoint : startLatLng ,
+                        endPoint  : endLatLng ,
+                        number    : 1,
+                        sensitivity :  false    });
+             
+                    var sensors = <%- sensors %> ;
+                  
+                  Object.keys( sensors).forEach(function (key) {
+                    var lat =  sensors[key].LatLng.lat ,
+                          lng = sensors[key].LatLng.lng; 
+                          img_src =  sensors[key].img_src;
+                    var location = new google.maps.LatLng( lat , lng ) ;
+                    if( img_src ) {
+            
+                       var data = sensors[key].value_str;
+              
+                       if(  data < 35 ) {
+                          var color  = 'red';
+                       }
+                       
+                         var infowindow = new google.maps.InfoWindow({
+                            content:  "<div style='text-align:center;'><img src=' " +  img_src + "' ><hr><span> ID : " + sensors[key].skyley_id +"</span> <br> <span>  <span style='color:" + color +";'>" + Number(sensors[key].value_str)   + "cm </span></span></div>",
+                            position: location
+                         }).open(map); 
+
+                     } else {
+                    
+                         var infowindow = new google.maps.InfoWindow({
+                            content:  sensors[key].skyley_id  + ":" + sensors[key].value_str + "cm ",
+                            position: location
+                          }).open(map); 
+                      
+                    }                                              
+                     });      
+                     renderRoutes( startLocation , endLocation , wayPointsList , map );
+                                 
+          }); 
+     }); 
+setTimeout( function () {
+     map.setCenter(startLocation);
+     map.setZoom(16);
+     
+}, 600);
+ }
+ 
+
+
+</script>
+  
+</head>
+
+ <body onload="onRouteSearch()">
+ <div id ="map"></div>
+    <div id="map_canvas" class="col-xs-12" style="height:70%"></div>
+  
+    <div class="container col-xs-12 " id="container">
+        <h1 data-i18n="welcome"></h1> <!-- Welcome -->
+              
+        <div id="nameInput" class="input-group-lg center-block helloInput text-center">
+            <p class="lead" data-i18n="what_is_your_name"></p>
+            
+            <input id="input_start_address" name = "address" type="text" placeholder = "出発地の住所" class="form-control" aria-describedby="sizing-addon1" value="大阪府大阪市淀川区西中島1" /><br>
+            <input id="input_end_address" name = "address" type="text" placeholder = "目的地の住所" class="form-control" aria-describedby="sizing-addon1" value="大阪府大阪市淀川区西中島2" /><br>
+            
+          <button class = "btn btn-default btn-default "  onClick = "onRouteSearch()">経路を検索する</button>
+      <button class = "btn btn-default btn-default "  onClick = "onTest()">経路を検索する</button>
+
+    
+        </div>
+        <p id="response" class="lead text-center"></p>
+        
+        
+        <p id="databaseNames" class="lead text-center"></p>
+    </div>
+    <footer class="footer">
+        <div class="container">
+            <span><a href="https://momo-ltd.com/" target="_blank">Momo Co.,Ltd </a></span>
+        </div>
+    </footer>
+
+</body>
+
+
+</html>
+
+
